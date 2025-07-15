@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <h2>欢迎使用 Sync Cut</h2>
+    <p>这是一个视频音频转换工具，支持以下功能：</p>
+    <ul style="margin: 20px 0; padding-left: 30px;">
+        <li><strong>MP4 转 MP3</strong>：将视频文件转换为音频文件，支持文件大小优化</li>
+        <li><strong>MP3 转文字</strong>：使用阿里云NLS服务将音频转换为文字和字幕</li>
+        <li><strong>批量处理</strong>：支持多文件同时转换</li>
+        <li><strong>参数配置</strong>：转换过程中的所有参数都可以自定义配置</li>
+    </ul>
+    
+    <div class="two-column" style="margin-top: 30px;">
+        <div>
+            <h3>快速开始</h3>
+            <p>1. 点击"文件上传"上传您的视频或音频文件</p>
+            <p>2. 选择转换类型和参数</p>
+            <p>3. 开始转换并下载结果</p>
+        </div>
+        <div>
+            <h3>系统状态</h3>
+            <p>应用版本：{{ app_version }}</p>
+            <p>支持格式：MP4, AVI, MOV, MKV, FLV, WMV, MP3, WAV, FLAC, AAC</p>
+            <p>最大文件大小：{{ max_file_size }}GB</p>
+        </div>
+    </div>
+</div>
+{% endblock %} 

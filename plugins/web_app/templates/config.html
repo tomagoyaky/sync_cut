@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <h2>配置设置</h2>
+    
+    <form id="configForm">
+        <div class="config-section">
+            <h3>MP4 转 MP3 设置</h3>
+            <div class="two-column">
+                <div class="form-group">
+                    <label for="mp4_audio_bitrate">音频比特率</label>
+                    <select id="mp4_audio_bitrate" name="mp4_audio_bitrate">
+                        <option value="32k" {{ 'selected' if mp4_config.get('audio_bitrate') == '32k' else '' }}>32k (最小)</option>
+                        <option value="64k" {{ 'selected' if mp4_config.get('audio_bitrate') == '64k' else '' }}>64k (推荐)</option>
+                        <option value="128k" {{ 'selected' if mp4_config.get('audio_bitrate') == '128k' else '' }}>128k (标准)</option>
+                        <option value="192k" {{ 'selected' if mp4_config.get('audio_bitrate') == '192k' else '' }}>192k (高质量)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="mp4_audio_channels">音频声道</label>
+                    <select id="mp4_audio_channels" name="mp4_audio_channels">
+                        <option value="1" {{ 'selected' if mp4_config.get('audio_channels') == 1 else '' }}>单声道 (更小)</option>
+                        <option value="2" {{ 'selected' if mp4_config.get('audio_channels') == 2 else '' }}>立体声</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="mp4_sample_rate">采样率</label>
+                    <select id="mp4_sample_rate" name="mp4_sample_rate">
+                        <option value="16000" {{ 'selected' if mp4_config.get('audio_sample_rate') == 16000 else '' }}>16kHz (语音)</option>
+                        <option value="22050" {{ 'selected' if mp4_config.get('audio_sample_rate') == 22050 else '' }}>22kHz</option>
+                        <option value="44100" {{ 'selected' if mp4_config.get('audio_sample_rate') == 44100 else '' }}>44kHz (CD质量)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="mp4_normalize" name="mp4_normalize" {{ 'checked' if mp4_config.get('normalize_audio') else '' }}>
+                        音频标准化
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="config-section">
+            <h3>MP3 转文字设置</h3>
+            <div class="two-column">
+                <div class="form-group">
+                    <label for="txt_sample_rate">采样率</label>
+                    <select id="txt_sample_rate" name="txt_sample_rate">
+                        <option value="16000" {{ 'selected' if mp3_config.get('sample_rate') == 16000 else '' }}>16kHz (推荐)</option>
+                        <option value="8000" {{ 'selected' if mp3_config.get('sample_rate') == 8000 else '' }}>8kHz</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="txt_punctuation" name="txt_punctuation" {{ 'checked' if mp3_config.get('enable_punctuation_prediction') else '' }}>
+                        启用标点符号预测
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="txt_normalization" name="txt_normalization" {{ 'checked' if mp3_config.get('enable_inverse_text_normalization') else '' }}>
+                        启用文本标准化
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="txt_voice_detection" name="txt_voice_detection" {{ 'checked' if mp3_config.get('enable_voice_detection') else '' }}>
+                        启用语音检测
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="config-section">
+            <h3>Whisper 设置</h3>
+            <div class="two-column">
+                <div class="form-group">
+                    <label for="whisper_model_size">模型大小</label>
+                    <select id="whisper_model_size" name="whisper_model_size">
+                        <option value="tiny" {{ 'selected' if mp3_config.get('whisper_model_size') == 'tiny' else '' }}>Tiny (39MB, 最快)</option>
+                        <option value="base" {{ 'selected' if mp3_config.get('whisper_model_size') == 'base' else '' }}>Base (74MB, 推荐)</option>
+                        <option value="small" {{ 'selected' if mp3_config.get('whisper_model_size') == 'small' else '' }}>Small (244MB, 更好)</option>
+                        <option value="medium" {{ 'selected' if mp3_config.get('whisper_model_size') == 'medium' else '' }}>Medium (769MB, 高质量)</option>
+                        <option value="large" {{ 'selected' if mp3_config.get('whisper_model_size') == 'large' else '' }}>Large (1550MB, 最佳)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="whisper_language">识别语言</label>
+                    <select id="whisper_language" name="whisper_language">
+                        <option value="zh" {{ 'selected' if mp3_config.get('whisper_language') == 'zh' else '' }}>中文</option>
+                        <option value="en" {{ 'selected' if mp3_config.get('whisper_language') == 'en' else '' }}>英语</option>
+                        <option value="ja" {{ 'selected' if mp3_config.get('whisper_language') == 'ja' else '' }}>日语</option>
+                        <option value="ko" {{ 'selected' if mp3_config.get('whisper_language') == 'ko' else '' }}>韩语</option>
+                        <option value="auto" {{ 'selected' if mp3_config.get('whisper_language') == 'auto' else '' }}>自动检测</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="whisper_device">计算设备</label>
+                    <select id="whisper_device" name="whisper_device">
+                        <option value="cpu" {{ 'selected' if mp3_config.get('whisper_device') == 'cpu' else '' }}>CPU (兼容性好)</option>
+                        <option value="cuda" {{ 'selected' if mp3_config.get('whisper_device') == 'cuda' else '' }}>GPU (CUDA, 更快)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="whisper_verbose" name="whisper_verbose" {{ 'checked' if mp3_config.get('whisper_verbose') else '' }}>
+                        详细输出
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="config-section">
+            <h3>阿里云NLS设置</h3>
+            <div class="form-group">
+                <label for="nls_app_key">App Key</label>
+                <input type="text" id="nls_app_key" name="nls_app_key" value="{{ nls_config.get('app_key', '') }}" placeholder="请输入阿里云NLS App Key">
+            </div>
+            
+            <div class="form-group">
+                <label for="nls_access_key_id">Access Key ID</label>
+                <input type="text" id="nls_access_key_id" name="nls_access_key_id" value="{{ nls_config.get('access_key_id', '') }}" placeholder="请输入Access Key ID">
+            </div>
+            
+            <div class="form-group">
+                <label for="nls_access_key_secret">Access Key Secret</label>
+                <input type="password" id="nls_access_key_secret" name="nls_access_key_secret" value="{{ nls_config.get('access_key_secret', '') }}" placeholder="请输入Access Key Secret">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <button type="submit" class="btn">保存配置</button>
+            <button type="button" class="btn" onclick="resetConfig()">重置为默认</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+document.getElementById('configForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const config = {};
+    
+    // Build config object
+    config.mp4_to_mp3 = {
+        audio_bitrate: formData.get('mp4_audio_bitrate'),
+        audio_channels: parseInt(formData.get('mp4_audio_channels')),
+        audio_sample_rate: parseInt(formData.get('mp4_sample_rate')),
+        normalize_audio: formData.get('mp4_normalize') === 'on',
+        remove_silence: true,
+        audio_codec: 'mp3'
+    };
+    
+    config.mp3_to_txt = {
+        sample_rate: parseInt(formData.get('txt_sample_rate')),
+        format: 'pcm',
+        enable_punctuation_prediction: formData.get('txt_punctuation') === 'on',
+        enable_inverse_text_normalization: formData.get('txt_normalization') === 'on',
+        enable_voice_detection: formData.get('txt_voice_detection') === 'on',
+        max_sentence_silence: 800,
+        chunk_size: 8192,
+        // Whisper settings
+        whisper_model_size: formData.get('whisper_model_size'),
+        whisper_language: formData.get('whisper_language'),
+        whisper_device: formData.get('whisper_device'),
+        whisper_verbose: formData.get('whisper_verbose') === 'on'
+    };
+    
+    config.alibaba_nls = {
+        app_key: formData.get('nls_app_key'),
+        access_key_id: formData.get('nls_access_key_id'),
+        access_key_secret: formData.get('nls_access_key_secret'),
+        region: 'cn-shanghai',
+        endpoint: 'wss://nls-gateway.cn-shanghai.aliyuncs.com/ws/v1'
+    };
+    
+    fetch('/api/config', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(config)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('配置保存成功！');
+        } else {
+            alert('配置保存失败：' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('配置保存失败：' + error.message);
+    });
+});
+
+function resetConfig() {
+    if (confirm('确定要重置为默认配置吗？')) {
+        fetch('/api/config/reset', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('配置已重置为默认值！');
+                location.reload();
+            } else {
+                alert('重置失败：' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('重置失败：' + error.message);
+        });
+    }
+}
+{% endblock %} 

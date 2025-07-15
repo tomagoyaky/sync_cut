@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - Sync Cut</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+               background: #f5f5f5; color: #333; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { background: #2c3e50; color: white; padding: 20px 0; margin-bottom: 30px; }
+        .header h1 { text-align: center; font-size: 2.5em; }
+        .nav { text-align: center; margin-top: 15px; }
+        .nav a { color: #ecf0f1; text-decoration: none; margin: 0 20px; 
+                 padding: 10px 20px; border-radius: 5px; transition: background 0.3s; }
+        .nav a:hover { background: #34495e; }
+        .nav a.active { background: #3498db; }
+        .card { background: white; padding: 30px; border-radius: 10px; 
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group select, .form-group textarea { 
+            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; 
+            font-size: 16px; }
+        .form-group input[type="file"] { padding: 8px; }
+        .btn { background: #3498db; color: white; padding: 12px 30px; border: none; 
+               border-radius: 5px; cursor: pointer; font-size: 16px; transition: background 0.3s; }
+        .btn:hover { background: #2980b9; }
+        .btn:disabled { background: #bdc3c7; cursor: not-allowed; }
+        .btn-success { background: #27ae60; }
+        .btn-success:hover { background: #219a52; }
+        .btn-danger { background: #e74c3c; }
+        .btn-danger:hover { background: #c0392b; }
+        .progress { background: #ecf0f1; border-radius: 10px; height: 20px; 
+                   margin: 10px 0; overflow: hidden; }
+        .progress-bar { background: #3498db; height: 100%; transition: width 0.3s; }
+        .alert { padding: 15px; margin: 15px 0; border-radius: 5px; }
+        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-danger { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .alert-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .config-section { margin-bottom: 30px; }
+        .config-section h3 { margin-bottom: 15px; color: #2c3e50; }
+        .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .file-list { max-height: 400px; overflow-y: auto; }
+        .file-item { padding: 10px; border-bottom: 1px solid #eee; display: flex; 
+                    justify-content: space-between; align-items: center; }
+        .file-item:last-child { border-bottom: none; }
+        .status { display: inline-block; padding: 3px 8px; border-radius: 3px; 
+                 font-size: 12px; font-weight: bold; }
+        .status-success { background: #d4edda; color: #155724; }
+        .status-processing { background: #fff3cd; color: #856404; }
+        .status-error { background: #f8d7da; color: #721c24; }
+        .hidden { display: none; }
+        .file-info { margin-top: 8px; padding: 8px; background: #f8f9fa; border-radius: 4px; }
+        .file-size-info { margin-top: 8px; padding: 6px; background: #e7f3ff; border-radius: 4px; }
+        .text-muted { color: #6c757d; }
+        .text-info { color: #0c5460; }
+        button:disabled { opacity: 0.6; cursor: not-allowed; background: #6c757d; }
+        .info-section { margin-bottom: 25px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #007bff; }
+        .info-section h3 { margin-top: 0; color: #007bff; font-size: 18px; }
+        .info-section h4 { margin-top: 15px; margin-bottom: 10px; color: #495057; font-size: 16px; }
+        .format-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px; }
+        .format-category { background: white; padding: 15px; border-radius: 6px; border: 1px solid #dee2e6; }
+        .format-list { margin: 10px 0; }
+        .format-tag { display: inline-block; background: #007bff; color: white; padding: 4px 8px; margin: 2px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .format-desc { margin-top: 10px; font-size: 14px; color: #6c757d; line-height: 1.4; }
+        .size-info { display: flex; align-items: flex-start; gap: 30px; margin-top: 15px; }
+        .size-limit { text-align: center; background: white; padding: 20px; border-radius: 8px; border: 2px solid #28a745; min-width: 120px; }
+        .size-number { display: block; font-size: 28px; font-weight: bold; color: #28a745; }
+        .size-label { display: block; font-size: 14px; color: #6c757d; margin-top: 5px; }
+        .size-recommendations { flex: 1; background: white; padding: 15px; border-radius: 6px; border: 1px solid #dee2e6; }
+        .size-recommendations h4 { margin-top: 0; color: #495057; }
+        .size-recommendations ul { margin: 10px 0; padding-left: 20px; }
+        .size-recommendations li { margin: 8px 0; line-height: 1.4; }
+        .conversion-help { margin-top: 8px; padding: 10px; background: #e8f4f8; border-radius: 4px; border-left: 3px solid #17a2b8; }
+        @media (max-width: 768px) {
+            .format-grid { grid-template-columns: 1fr; }
+            .size-info { flex-direction: column; gap: 15px; }
+            .two-column { grid-template-columns: 1fr; }
+            .container { padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>Sync Cut</h1>
+            <div class="nav">
+                <a href="/" class="{{ 'active' if request.endpoint == 'index' else '' }}">首页</a>
+                <a href="/upload" class="{{ 'active' if request.endpoint == 'upload_page' else '' }}">文件上传</a>
+                <a href="/config" class="{{ 'active' if request.endpoint == 'config_page' else '' }}">配置设置</a>
+                <a href="/history" class="{{ 'active' if request.endpoint == 'history_page' else '' }}">转换历史</a>
+                <a href="/status" class="{{ 'active' if request.endpoint == 'status_page' else '' }}">系统状态</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+    
+    <script>
+        // Auto-refresh for active conversions
+        function refreshConversions() {
+            fetch('/api/conversions')
+                .then(response => response.json())
+                .then(data => {
+                    const activeList = document.getElementById('active-conversions');
+                    if (activeList && data.active_conversions) {
+                        updateActiveConversions(data.active_conversions);
+                    }
+                })
+                .catch(error => console.error('Error refreshing conversions:', error));
+        }
+        
+        function updateActiveConversions(conversions) {
+            const activeList = document.getElementById('active-conversions');
+            if (!activeList) return;
+            
+            activeList.innerHTML = '';
+            
+            if (Object.keys(conversions).length === 0) {
+                activeList.innerHTML = '<p>没有正在进行的转换</p>';
+                return;
+            }
+            
+            for (const [id, conversion] of Object.entries(conversions)) {
+                const div = document.createElement('div');
+                div.className = 'file-item';
+                div.innerHTML = `
+                    <div>
+                        <strong>${conversion.filename}</strong><br>
+                        <small>${conversion.type} - ${conversion.status}</small>
+                    </div>
+                    <div>
+                        <div class="progress" style="width: 200px;">
+                            <div class="progress-bar" style="width: ${conversion.progress}%"></div>
+                        </div>
+                        <small>${conversion.progress}%</small>
+                    </div>
+                `;
+                activeList.appendChild(div);
+            }
+        }
+        
+        // Start auto-refresh if on upload page
+        if (window.location.pathname === '/upload') {
+            setInterval(refreshConversions, 2000);
+        }
+        
+        {% block scripts %}{% endblock %}
+    </script>
+</body>
+</html> 

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <h2>转换历史</h2>
+    <div id="history-content">
+        <p>加载中...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+fetch('/api/history')
+    .then(response => response.json())
+    .then(data => {
+        const historyContent = document.getElementById('history-content');
+        
+        if (data.history && data.history.length > 0) {
+            let html = '<div class="file-list">';
+            
+            data.history.forEach(item => {
+                const date = new Date(item.timestamp).toLocaleString('zh-CN');
+                const statusClass = item.success ? 'status-success' : 'status-error';
+                const statusText = item.success ? '成功' : '失败';
+                
+                html += `
+                    <div class="file-item">
+                        <div>
+                            <strong>${item.input_file}</strong> → ${item.output_file}<br>
+                            <small>${date} - ${item.type}</small>
+                        </div>
+                        <div>
+                            <span class="status ${statusClass}">${statusText}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            historyContent.innerHTML = html;
+        } else {
+            historyContent.innerHTML = '<p>暂无转换历史</p>';
+        }
+    })
+    .catch(error => {
+        document.getElementById('history-content').innerHTML = '<p>加载失败：' + error.message + '</p>';
+    });
+{% endblock %} 

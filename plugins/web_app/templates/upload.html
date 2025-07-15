@@ -1,0 +1,869 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <h2>文件上传与转换</h2>
+    
+    <!-- 功能说明 -->
+    <div class="info-section">
+        <h3>功能说明</h3>
+        <p>本系统支持视频和音频文件的智能转换处理，提供以下三种转换模式：</p>
+        <ul>
+            <li><strong>MP4 转 MP3</strong>：将视频文件提取音频并转换为MP3格式，支持参数优化以减小文件大小</li>
+            <li><strong>MP3 转文字</strong>：使用阿里云智能语音识别服务，将音频转换为文字和SRT字幕文件</li>
+            <li><strong>MP4 转文字</strong>：完整流程，先将视频转换为音频，再进行语音识别转换为文字</li>
+        </ul>
+    </div>
+    
+    <!-- 文件格式支持说明 -->
+    <div class="info-section">
+        <h3>支持的文件格式</h3>
+        <div class="format-grid">
+            <div class="format-category">
+                <h4>视频格式</h4>
+                <div class="format-list">
+                    <span class="format-tag">MP4</span>
+                    <span class="format-tag">AVI</span>
+                    <span class="format-tag">MOV</span>
+                    <span class="format-tag">MKV</span>
+                    <span class="format-tag">FLV</span>
+                    <span class="format-tag">WMV</span>
+                </div>
+                <p class="format-desc">支持主流视频格式，推荐使用MP4格式以获得最佳兼容性</p>
+            </div>
+            
+            <div class="format-category">
+                <h4>音频格式</h4>
+                <div class="format-list">
+                    <span class="format-tag">MP3</span>
+                    <span class="format-tag">WAV</span>
+                    <span class="format-tag">FLAC</span>
+                    <span class="format-tag">AAC</span>
+                </div>
+                <p class="format-desc">支持常见音频格式，推荐使用MP3或WAV格式以获得最佳识别效果</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 文件大小和质量说明 -->
+    <div class="info-section">
+        <h3>文件大小限制</h3>
+        <div class="size-info">
+            <div class="size-limit">
+                <span class="size-number">10GB</span>
+                <span class="size-label">最大文件大小</span>
+            </div>
+            <div class="size-recommendations">
+                <h4>建议</h4>
+                <ul>
+                    <li>视频文件：建议分辨率不超过1080P，码率适中以平衡文件大小和质量</li>
+                    <li>音频文件：建议采样率16kHz或以上，以获得更好的语音识别效果</li>
+                    <li>文件时长：建议单个文件时长不超过2小时，以确保处理效率</li>
+                    <li>语音质量：清晰的语音录音将获得更准确的识别结果</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <form id="uploadForm" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="file">选择文件</label>
+            <div class="file-input-wrapper">
+                <input type="file" id="file" name="file" accept=".mp4,.avi,.mov,.mkv,.flv,.wmv,.mp3,.wav,.flac,.aac" required>
+                <div class="file-input-overlay">
+                    <div class="file-input-icon">📁</div>
+                    <div class="file-input-text">点击选择文件或拖拽文件到此处</div>
+                    <div class="file-input-subtext">支持 MP4, AVI, MOV, MKV, FLV, WMV, MP3, WAV, FLAC, AAC</div>
+                </div>
+            </div>
+            
+            <!-- 文件信息显示 -->
+            <div id="file-info-display" class="file-info-display hidden">
+                <div class="file-details">
+                    <div class="file-name">
+                        <span class="file-icon">📄</span>
+                        <span id="selected-file-name">未选择文件</span>
+                    </div>
+                    <div class="file-size-display">
+                        <span id="selected-file-size">0 Bytes</span>
+                        <span class="size-separator">/</span>
+                        <span class="max-size">10 GB</span>
+                    </div>
+                    <div class="file-size-bar">
+                        <div class="size-bar-bg">
+                            <div id="file-size-progress" class="size-bar-fill" style="width: 0%"></div>
+                        </div>
+                        <div class="size-percentage" id="size-percentage">0%</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 文件大小警告 -->
+            <div id="file-size-warning" class="alert alert-warning hidden">
+                <strong>⚠️ 警告：</strong>选择的文件大小超过10GB限制！请选择较小的文件。
+            </div>
+            
+            <!-- 文件类型错误 -->
+            <div id="file-type-error" class="alert alert-danger hidden">
+                <strong>❌ 错误：</strong>不支持的文件格式！请选择支持的视频或音频文件。
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="conversion_type">转换类型</label>
+            <select id="conversion_type" name="conversion_type" required>
+                <option value="">请选择转换类型</option>
+                <option value="mp4_to_mp3">MP4 转 MP3 - 提取视频中的音频</option>
+                <option value="mp3_to_txt">MP3 转文字 - 语音识别转换为文字</option>
+                <option value="mp4_to_txt">MP4 转文字 - 完整流程（视频→音频→文字）</option>
+            </select>
+            <div class="conversion-help">
+                <small class="text-muted">
+                    <strong>💡 提示：</strong>
+                    <br>• MP4转MP3：快速提取音频，适合需要音频文件的场景
+                    <br>• MP3转文字：直接处理音频文件，生成文字和字幕
+                    <br>• MP4转文字：一站式处理，从视频直接得到文字内容
+                </small>
+            </div>
+        </div>
+        
+        <div class="form-group" id="engine-selection" style="display: none;">
+            <label for="conversion_engine">转换引擎</label>
+            <select id="conversion_engine" name="conversion_engine">
+                <option value="alibaba_nls">阿里云 NLS - 云端语音识别服务</option>
+                <option value="whisper">OpenAI Whisper - 本地语音识别模型</option>
+            </select>
+            <div class="engine-help">
+                <small class="text-muted">
+                    <strong>🔧 引擎对比：</strong>
+                    <br>• 阿里云NLS：云端处理，识别准确度高，需要网络连接
+                    <br>• OpenAI Whisper：本地处理，离线可用，支持多种语言
+                </small>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <button type="submit" class="btn" id="submit-btn" disabled>请先选择文件</button>
+        </div>
+    </form>
+    
+    <!-- 上传进度区域 -->
+    <div id="upload-progress-section" class="progress-section hidden">
+        <h3>📤 文件上传进度</h3>
+        <div class="progress-container">
+            <div class="progress-bar-wrapper">
+                <div class="progress-bar" id="upload-progress-bar" style="width: 0%"></div>
+                <div class="progress-text" id="upload-progress-text">0%</div>
+            </div>
+            <div class="progress-details">
+                <span id="upload-speed">上传速度: 0 MB/s</span>
+                <span id="upload-eta">预计剩余时间: --</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 转换进度区域 -->
+    <div id="conversion-progress-section" class="progress-section hidden">
+        <h3>⚙️ 转换进度</h3>
+        <div class="progress-container">
+            <div class="progress-bar-wrapper">
+                <div class="progress-bar" id="conversion-progress-bar" style="width: 0%"></div>
+                <div class="progress-text" id="conversion-progress-text">0%</div>
+            </div>
+            <div class="progress-status" id="conversion-status">准备中...</div>
+        </div>
+    </div>
+    
+    <!-- 结果区域 -->
+    <div id="result-section" class="result-section hidden">
+        <h3>📋 转换结果</h3>
+        <div id="result-content"></div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>正在进行的转换</h2>
+    <div id="active-conversions">
+        <p>没有正在进行的转换</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+// 配置常量
+const MAX_FILE_SIZE = 10 * 1024 * 1024 * 1024; // 10GB
+const SUPPORTED_EXTENSIONS = ['.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv', '.mp3', '.wav', '.flac', '.aac'];
+
+// 全局变量
+let selectedFile = null;
+let uploadStartTime = null;
+let uploadXHR = null;
+let socket = null;
+let currentConversionId = null;
+
+// DOM 元素
+const fileInput = document.getElementById('file');
+const fileInfoDisplay = document.getElementById('file-info-display');
+const fileSizeWarning = document.getElementById('file-size-warning');
+const fileTypeError = document.getElementById('file-type-error');
+const submitBtn = document.getElementById('submit-btn');
+const uploadForm = document.getElementById('uploadForm');
+
+// 文件大小格式化函数
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// 计算上传速度
+function calculateUploadSpeed(uploadedBytes, startTime) {
+    const currentTime = Date.now();
+    const elapsedTime = (currentTime - startTime) / 1000; // 秒
+    const speed = uploadedBytes / elapsedTime; // 字节/秒
+    return speed;
+}
+
+// 格式化时间
+function formatTime(seconds) {
+    if (!seconds || seconds === Infinity) return '--';
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}分${remainingSeconds}秒`;
+}
+
+// 验证文件格式
+function validateFileType(filename) {
+    const extension = '.' + filename.split('.').pop().toLowerCase();
+    return SUPPORTED_EXTENSIONS.includes(extension);
+}
+
+// 验证文件大小
+function validateFileSize(size) {
+    return size <= MAX_FILE_SIZE;
+}
+
+// 更新文件信息显示
+function updateFileDisplay(file) {
+    if (!file) {
+        fileInfoDisplay.classList.add('hidden');
+        return;
+    }
+    
+    const fileName = file.name;
+    const fileSize = file.size;
+    const sizePercentage = (fileSize / MAX_FILE_SIZE) * 100;
+    
+    document.getElementById('selected-file-name').textContent = fileName;
+    document.getElementById('selected-file-size').textContent = formatFileSize(fileSize);
+    document.getElementById('file-size-progress').style.width = Math.min(sizePercentage, 100) + '%';
+    document.getElementById('size-percentage').textContent = sizePercentage.toFixed(1) + '%';
+    
+    // 设置进度条颜色
+    const progressBar = document.getElementById('file-size-progress');
+    if (sizePercentage > 90) {
+        progressBar.style.backgroundColor = '#dc3545'; // 红色
+    } else if (sizePercentage > 70) {
+        progressBar.style.backgroundColor = '#ffc107'; // 黄色
+    } else {
+        progressBar.style.backgroundColor = '#28a745'; // 绿色
+    }
+    
+    fileInfoDisplay.classList.remove('hidden');
+}
+
+// 重置警告和错误信息
+function resetValidationMessages() {
+    fileSizeWarning.classList.add('hidden');
+    fileTypeError.classList.add('hidden');
+}
+
+// 验证并更新UI
+function validateAndUpdateUI(file) {
+    resetValidationMessages();
+    
+    if (!file) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = '请先选择文件';
+        return false;
+    }
+    
+    // 验证文件类型
+    if (!validateFileType(file.name)) {
+        fileTypeError.classList.remove('hidden');
+        submitBtn.disabled = true;
+        submitBtn.textContent = '不支持的文件格式';
+        return false;
+    }
+    
+    // 验证文件大小
+    if (!validateFileSize(file.size)) {
+        fileSizeWarning.classList.remove('hidden');
+        submitBtn.disabled = true;
+        submitBtn.textContent = '文件过大，无法上传';
+        return false;
+    }
+    
+    // 验证通过
+    submitBtn.disabled = false;
+    submitBtn.textContent = '开始转换';
+    return true;
+}
+
+// 文件选择事件处理
+fileInput.addEventListener('change', function(e) {
+    selectedFile = e.target.files[0];
+    updateFileDisplay(selectedFile);
+    validateAndUpdateUI(selectedFile);
+});
+
+// 转换类型选择事件处理
+document.getElementById('conversion_type').addEventListener('change', function(e) {
+    const conversionType = e.target.value;
+    const engineSelection = document.getElementById('engine-selection');
+    
+    // 只有在选择了文字转换类型时才显示引擎选择
+    if (conversionType === 'mp3_to_txt' || conversionType === 'mp4_to_txt') {
+        engineSelection.style.display = 'block';
+    } else {
+        engineSelection.style.display = 'none';
+    }
+});
+
+// 拖拽上传功能
+const fileInputWrapper = document.querySelector('.file-input-wrapper');
+
+fileInputWrapper.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    fileInputWrapper.classList.add('drag-over');
+});
+
+fileInputWrapper.addEventListener('dragleave', function(e) {
+    e.preventDefault();
+    fileInputWrapper.classList.remove('drag-over');
+});
+
+fileInputWrapper.addEventListener('drop', function(e) {
+    e.preventDefault();
+    fileInputWrapper.classList.remove('drag-over');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        selectedFile = files[0];
+        fileInput.files = files; // 更新input的files
+        updateFileDisplay(selectedFile);
+        validateAndUpdateUI(selectedFile);
+    }
+});
+
+// 上传进度更新函数
+function updateUploadProgress(loaded, total) {
+    const percentage = Math.round((loaded / total) * 100);
+    const uploadProgressBar = document.getElementById('upload-progress-bar');
+    const uploadProgressText = document.getElementById('upload-progress-text');
+    
+    uploadProgressBar.style.width = percentage + '%';
+    uploadProgressText.textContent = percentage + '%';
+    
+    // 计算上传速度和剩余时间
+    if (uploadStartTime) {
+        const speed = calculateUploadSpeed(loaded, uploadStartTime);
+        const speedMB = speed / (1024 * 1024);
+        const remainingBytes = total - loaded;
+        const eta = remainingBytes / speed;
+        
+        document.getElementById('upload-speed').textContent = `上传速度: ${speedMB.toFixed(2)} MB/s`;
+        document.getElementById('upload-eta').textContent = `预计剩余时间: ${formatTime(eta)}`;
+    }
+}
+
+// 表单提交处理
+uploadForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (!selectedFile) {
+        alert('请先选择文件！');
+        return;
+    }
+    
+    // 最后一次验证
+    if (!validateAndUpdateUI(selectedFile)) {
+        return;
+    }
+    
+    const formData = new FormData(this);
+    
+    // 显示上传进度
+    document.getElementById('upload-progress-section').classList.remove('hidden');
+    document.getElementById('conversion-progress-section').classList.add('hidden');
+    document.getElementById('result-section').classList.add('hidden');
+    
+    // 禁用提交按钮
+    submitBtn.disabled = true;
+    submitBtn.textContent = '上传中...';
+    
+    // 记录上传开始时间
+    uploadStartTime = Date.now();
+    
+    // 创建 XMLHttpRequest 以支持进度跟踪
+    uploadXHR = new XMLHttpRequest();
+    
+    // 上传进度监听
+    uploadXHR.upload.addEventListener('progress', function(e) {
+        if (e.lengthComputable) {
+            updateUploadProgress(e.loaded, e.total);
+        }
+    });
+    
+    // 上传完成监听
+    uploadXHR.addEventListener('load', function() {
+        if (uploadXHR.status === 200) {
+            try {
+                const response = JSON.parse(uploadXHR.responseText);
+                handleUploadSuccess(response);
+            } catch (error) {
+                handleUploadError('响应解析错误: ' + error.message);
+            }
+        } else if (uploadXHR.status === 413) {
+            try {
+                const response = JSON.parse(uploadXHR.responseText);
+                handleUploadError(response.message || '文件过大，超过系统限制');
+            } catch (error) {
+                handleUploadError('文件过大，超过系统限制');
+            }
+        } else {
+            handleUploadError('上传失败，服务器响应错误: ' + uploadXHR.status);
+        }
+    });
+    
+    // 上传错误监听
+    uploadXHR.addEventListener('error', function() {
+        handleUploadError('网络错误，请检查网络连接');
+    });
+    
+    // 上传中止监听
+    uploadXHR.addEventListener('abort', function() {
+        handleUploadError('上传被中止');
+    });
+    
+    // 发送请求
+    uploadXHR.open('POST', '/api/convert');
+    uploadXHR.send(formData);
+});
+
+// 处理上传成功
+function handleUploadSuccess(response) {
+    if (response.success) {
+        // 隐藏上传进度，显示转换进度
+        document.getElementById('upload-progress-section').classList.add('hidden');
+        document.getElementById('conversion-progress-section').classList.remove('hidden');
+        
+        currentConversionId = response.conversion_id;
+        
+        // 加入WebSocket转换房间
+        if (socket) {
+            socket.emit('join_conversion', { conversion_id: currentConversionId });
+        }
+    } else {
+        handleUploadError(response.message || '上传失败');
+    }
+}
+
+// 处理上传错误
+function handleUploadError(message) {
+    document.getElementById('upload-progress-section').classList.add('hidden');
+    document.getElementById('conversion-progress-section').classList.add('hidden');
+    
+    const resultContent = document.getElementById('result-content');
+    resultContent.innerHTML = `
+        <div class="alert alert-danger">
+            <strong>❌ 上传失败：</strong>${message}
+        </div>
+    `;
+    
+    document.getElementById('result-section').classList.remove('hidden');
+    
+    // 重置按钮状态
+    submitBtn.disabled = false;
+    submitBtn.textContent = '开始转换';
+}
+
+
+
+// WebSocket 初始化和事件处理
+function initWebSocket() {
+    // 初始化Socket.IO连接
+    socket = io();
+    
+    // 连接状态事件
+    socket.on('connect', function() {
+        console.log('WebSocket connected');
+    });
+    
+    socket.on('disconnect', function() {
+        console.log('WebSocket disconnected');
+    });
+    
+    socket.on('connection_status', function(data) {
+        console.log('Connection status:', data);
+    });
+    
+    // 上传进度事件
+    socket.on('upload_progress', function(data) {
+        if (data.conversion_id === currentConversionId) {
+            updateUploadProgressFromSocket(data);
+        }
+    });
+    
+    // 转换进度事件
+    socket.on('conversion_progress', function(data) {
+        if (data.conversion_id === currentConversionId) {
+            updateConversionProgressFromSocket(data);
+        }
+    });
+    
+    // 转换完成事件
+    socket.on('conversion_complete', function(data) {
+        if (data.conversion_id === currentConversionId) {
+            handleConversionCompleteFromSocket(data);
+        }
+    });
+    
+    // 错误事件
+    socket.on('error', function(data) {
+        if (data.conversion_id === currentConversionId) {
+            handleErrorFromSocket(data);
+        }
+    });
+    
+    // 转换状态更新事件
+    socket.on('conversion_status', function(data) {
+        if (data.id === currentConversionId) {
+            updateConversionStatus(data);
+        }
+    });
+}
+
+// 从WebSocket更新上传进度
+function updateUploadProgressFromSocket(data) {
+    const uploadProgressBar = document.getElementById('upload-progress-bar');
+    const uploadProgressText = document.getElementById('upload-progress-text');
+    
+    uploadProgressBar.style.width = data.percentage + '%';
+    uploadProgressText.textContent = data.percentage + '%';
+    
+    if (data.speed) {
+        const speedMB = data.speed / (1024 * 1024);
+        document.getElementById('upload-speed').textContent = `上传速度: ${speedMB.toFixed(2)} MB/s`;
+    }
+    
+    if (data.eta) {
+        document.getElementById('upload-eta').textContent = `预计剩余时间: ${formatTime(data.eta)}`;
+    }
+}
+
+// 从WebSocket更新转换进度
+function updateConversionProgressFromSocket(data) {
+    const conversionProgressBar = document.getElementById('conversion-progress-bar');
+    const conversionProgressText = document.getElementById('conversion-progress-text');
+    const conversionStatus = document.getElementById('conversion-status');
+    
+    conversionProgressBar.style.width = data.progress + '%';
+    conversionProgressText.textContent = data.progress + '%';
+    conversionStatus.textContent = data.message || '处理中...';
+}
+
+// 从WebSocket处理转换完成
+function handleConversionCompleteFromSocket(data) {
+    document.getElementById('conversion-progress-section').classList.add('hidden');
+    
+    const resultContent = document.getElementById('result-content');
+    
+    if (data.success) {
+        const outputFileName = data.output_file ? data.output_file.split('/').pop() : '转换结果';
+        resultContent.innerHTML = `
+            <div class="alert alert-success">
+                <h4>✅ 转换成功！</h4>
+                <p><strong>输出文件：</strong>${outputFileName}</p>
+                <p><strong>转换时间：</strong>${new Date(data.end_time).toLocaleString()}</p>
+                <div style="margin-top: 15px;">
+                    <a href="/api/download/${data.conversion_id}" class="btn btn-success">
+                        📥 下载文件
+                    </a>
+                </div>
+            </div>
+        `;
+    } else {
+        resultContent.innerHTML = `
+            <div class="alert alert-danger">
+                <h4>❌ 转换失败</h4>
+                <p><strong>错误信息：</strong>${data.error || data.message}</p>
+                <p><strong>失败时间：</strong>${new Date(data.end_time).toLocaleString()}</p>
+            </div>
+        `;
+    }
+    
+    document.getElementById('result-section').classList.remove('hidden');
+    
+    // 重置按钮状态
+    submitBtn.disabled = false;
+    submitBtn.textContent = '开始转换';
+    
+    // 离开转换房间
+    if (socket && currentConversionId) {
+        socket.emit('leave_conversion', { conversion_id: currentConversionId });
+        currentConversionId = null;
+    }
+}
+
+// 从WebSocket处理错误
+function handleErrorFromSocket(data) {
+    document.getElementById('upload-progress-section').classList.add('hidden');
+    document.getElementById('conversion-progress-section').classList.add('hidden');
+    
+    const resultContent = document.getElementById('result-content');
+    resultContent.innerHTML = `
+        <div class="alert alert-danger">
+            <strong>❌ 错误：</strong>${data.message}
+        </div>
+    `;
+    
+    document.getElementById('result-section').classList.remove('hidden');
+    
+    // 重置按钮状态
+    submitBtn.disabled = false;
+    submitBtn.textContent = '开始转换';
+    
+    // 离开转换房间
+    if (socket && currentConversionId) {
+        socket.emit('leave_conversion', { conversion_id: currentConversionId });
+        currentConversionId = null;
+    }
+}
+
+// 更新转换状态
+function updateConversionStatus(data) {
+    if (data.progress !== undefined) {
+        updateConversionProgressFromSocket({
+            progress: data.progress,
+            message: data.message
+        });
+    }
+    
+    if (data.completed) {
+        handleConversionCompleteFromSocket(data);
+    }
+}
+
+// 页面加载时初始化
+document.addEventListener('DOMContentLoaded', function() {
+    validateAndUpdateUI(null);
+    initWebSocket();
+});
+</script>
+
+<style>
+/* 文件输入样式 */
+.file-input-wrapper {
+    position: relative;
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    padding: 40px 20px;
+    text-align: center;
+    background-color: #fafafa;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.file-input-wrapper:hover {
+    border-color: #007bff;
+    background-color: #f0f8ff;
+}
+
+.file-input-wrapper.drag-over {
+    border-color: #007bff;
+    background-color: #e3f2fd;
+}
+
+.file-input-wrapper input[type="file"] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.file-input-overlay {
+    pointer-events: none;
+}
+
+.file-input-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+.file-input-text {
+    font-size: 16px;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.file-input-subtext {
+    font-size: 12px;
+    color: #666;
+}
+
+/* 文件信息显示 */
+.file-info-display {
+    margin-top: 15px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    border-left: 4px solid #007bff;
+}
+
+.file-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.file-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+}
+
+.file-icon {
+    font-size: 16px;
+}
+
+.file-size-display {
+    font-size: 14px;
+    color: #666;
+}
+
+.size-separator {
+    margin: 0 5px;
+    color: #999;
+}
+
+.file-size-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.size-bar-bg {
+    flex: 1;
+    height: 6px;
+    background-color: #e9ecef;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.size-bar-fill {
+    height: 100%;
+    background-color: #28a745;
+    transition: width 0.3s ease;
+}
+
+.size-percentage {
+    font-size: 12px;
+    color: #666;
+    min-width: 35px;
+}
+
+/* 进度区域样式 */
+.progress-section {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+}
+
+.progress-container {
+    margin-top: 15px;
+}
+
+.progress-bar-wrapper {
+    position: relative;
+    height: 30px;
+    background-color: #e9ecef;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #007bff, #0056b3);
+    border-radius: 15px;
+    transition: width 0.3s ease;
+    position: relative;
+}
+
+.progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-weight: 500;
+    font-size: 14px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.progress-details {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    font-size: 12px;
+    color: #666;
+}
+
+.progress-status {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #333;
+    font-weight: 500;
+}
+
+/* 结果区域样式 */
+.result-section {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+
+/* 隐藏类 */
+.hidden {
+    display: none !important;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .file-input-wrapper {
+        padding: 30px 15px;
+    }
+    
+    .file-input-icon {
+        font-size: 36px;
+    }
+    
+    .progress-details {
+        flex-direction: column;
+        gap: 5px;
+    }
+}
+</style>
+{% endblock %} 

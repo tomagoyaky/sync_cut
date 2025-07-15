@@ -1,0 +1,68 @@
+# Sync Cut Configuration Example
+# Copy this file to config.yaml and update with your settings
+
+# Application basic information
+app:
+  name: "Sync Cut"
+  version: "1.0.0"
+
+# Web application settings
+web_app:
+  host: "0.0.0.0"              # Server host
+  port: 7000                   # Server port
+  debug: false                 # Debug mode
+  max_content_length: 10737418240 # Max upload size (10GB in bytes)
+
+# File upload settings
+file_upload:
+  allowed_extensions: 
+    - "mp4"
+    - "avi"
+    - "mov"
+    - "mkv"
+    - "flv"
+    - "wmv"
+    - "mp3"
+    - "wav"
+    - "flac"
+    - "aac"
+
+# MP4 to MP3 conversion settings
+mp4_to_mp3:
+  audio_bitrate: "64k"          # Audio bitrate (lower = smaller file)
+  audio_codec: "mp3"            # Audio codec
+  audio_channels: 1             # Number of audio channels (1=mono, 2=stereo)
+  audio_sample_rate: 16000      # Audio sample rate in Hz
+  normalize_audio: true         # Normalize audio levels
+  remove_silence: true          # Remove silence to reduce file size
+
+# MP3 to TXT conversion settings
+mp3_to_txt:
+  sample_rate: 16000           # Sample rate for recognition
+  format: "pcm"                # Audio format for recognition
+  enable_punctuation_prediction: true      # Enable punctuation prediction
+  enable_inverse_text_normalization: true # Enable inverse text normalization
+  enable_voice_detection: true             # Enable voice activity detection
+  max_sentence_silence: 800                # Max silence duration in ms
+  chunk_size: 8192                        # Audio chunk size in bytes
+
+# Alibaba Cloud NLS (Natural Language Service) settings
+# Get your credentials from: https://ram.console.aliyun.com/manage/ak
+# Create an NLS app at: https://nls-portal.console.aliyun.com/applist
+alibaba_nls:
+  access_key_id: "YOUR_ACCESS_KEY_ID"      # Your Alibaba Cloud Access Key ID
+  access_key_secret: "YOUR_ACCESS_KEY_SECRET"  # Your Alibaba Cloud Access Key Secret
+  app_key: "YOUR_APP_KEY"                  # Your NLS application key
+  region: "cn-shanghai"                     # Service region
+  endpoint: "wss://nls-gateway.cn-shanghai.aliyuncs.com/ws/v1"  # NLS WebSocket endpoint
+
+# File paths (relative to project root)
+paths:
+  workspace: "workspace"
+  plugins: "plugins"
+  tools: "plugins/mp4_to_mp3/tools"
+  models: "workspace/models"
+  logs: "workspace/logs"
+  upload: "workspace/upload"
+  tmp: "workspace/tmp"
+  status: "workspace/status" 

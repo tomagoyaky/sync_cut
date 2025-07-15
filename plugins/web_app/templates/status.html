@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <h2>系统状态</h2>
+    <div id="status-content">
+        <p>加载中...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+fetch('/api/status')
+    .then(response => response.json())
+    .then(data => {
+        const statusContent = document.getElementById('status-content');
+        
+        let html = `
+            <div class="two-column">
+                <div>
+                    <h3>应用信息</h3>
+                    <p><strong>名称：</strong>${data.app_name}</p>
+                    <p><strong>版本：</strong>${data.version}</p>
+                    <p><strong>状态：</strong>${data.status}</p>
+                </div>
+                <div>
+                    <h3>目录信息</h3>
+                    <p><strong>工作目录：</strong>${data.workspace}</p>
+                    <p><strong>插件目录：</strong>${data.plugins}</p>
+                    <p><strong>工具目录：</strong>${data.tools}</p>
+                </div>
+            </div>
+            
+            <h3>子目录状态</h3>
+            <div class="two-column">
+        `;
+        
+        for (const [name, path] of Object.entries(data.directories)) {
+            html += `<p><strong>${name}：</strong>${path}</p>`;
+        }
+        
+        html += '</div>';
+        
+        statusContent.innerHTML = html;
+    })
+    .catch(error => {
+        document.getElementById('status-content').innerHTML = '<p>加载失败：' + error.message + '</p>';
+    });
+{% endblock %} 

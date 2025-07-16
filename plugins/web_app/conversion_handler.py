@@ -22,7 +22,15 @@ from .utils import active_conversions, conversion_history
 # Import converters with correct paths
 from plugins.mp4_to_mp3.mp4_to_mp3 import MP4ToMP3Converter, save_conversion_log as save_mp4_log
 from plugins.mp3_to_txt.mp3_to_txt import MP3ToTXTConverter, save_conversion_log as save_txt_log
-from plugins.mp3_to_txt.whisper_convert import WhisperConverter, save_whisper_conversion_log
+
+# Try to import Whisper converter, but make it optional
+try:
+    from plugins.mp3_to_txt.whisper_convert import WhisperConverter, save_whisper_conversion_log
+    WHISPER_AVAILABLE = True
+except ImportError:
+    WhisperConverter = None
+    save_whisper_conversion_log = None
+    WHISPER_AVAILABLE = False
 
 # Import WebSocket handler
 from . import websocket_handler
@@ -116,6 +124,8 @@ def process_conversion(conversion_id: str, input_path: str, conversion_type: str
             
             # 根据引擎选择不同的转换器
             if conversion_engine == 'whisper':
+                if not WHISPER_AVAILABLE:
+                    raise ValueError("Whisper engine is not available. Please install openai-whisper or use 'alibaba_nls' engine.")
                 logger.info("初始化 WhisperConverter")
                 converter = WhisperConverter(config.get('mp3_to_txt'))
                 logger.debug(f"Whisper转换器配置: {config.get('mp3_to_txt')}")
@@ -177,6 +187,8 @@ def process_conversion(conversion_id: str, input_path: str, conversion_type: str
             
             # 根据引擎选择不同的转换器
             if conversion_engine == 'whisper':
+                if not WHISPER_AVAILABLE:
+                    raise ValueError("Whisper engine is not available. Please install openai-whisper or use 'alibaba_nls' engine.")
                 logger.info("初始化 WhisperConverter")
                 txt_converter = WhisperConverter(config.get('mp3_to_txt'))
             else:

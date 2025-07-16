@@ -19,7 +19,13 @@ import subprocess
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-import whisper
+try:
+    import whisper
+    WHISPER_AVAILABLE = True
+except ImportError:
+    whisper = None
+    WHISPER_AVAILABLE = False
+    
 from pydub import AudioSegment
 
 from plugins.config import MP3_TO_TXT_CONFIG, TMP_DIR, LOGS_DIR, MODELS_DIR
@@ -31,6 +37,9 @@ class WhisperConverter:
     
     def __init__(self, config: Dict = None):
         """初始化Whisper转换器"""
+        if not WHISPER_AVAILABLE:
+            raise ImportError("Whisper is not available. Please install openai-whisper to use this functionality.")
+            
         self.config = config or MP3_TO_TXT_CONFIG.copy()
         self.tmp_dir = TMP_DIR
         self.models_dir = MODELS_DIR

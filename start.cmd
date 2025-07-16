@@ -55,6 +55,7 @@ echo Adding FFmpeg tools to PATH...
 set PATH=%PROJECT_DIR%plugins\tools;%PATH%
 
 REM Start the application
+echo Starting Sync Cut web application...
 python plugins\web_app\run.py
 
 REM Deactivate virtual environment when done

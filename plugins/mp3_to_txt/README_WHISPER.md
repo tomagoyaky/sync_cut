@@ -4,14 +4,14 @@
 
 本项目现在支持两种音频转文字引擎：
 - **阿里云 NLS**：云端语音识别服务，识别准确度高，需要网络连接
-- **OpenAI Whisper**：本地语音识别模型，离线可用，支持多种语言
+- **Fast Whisper**：本地语音识别模型，离线可用，支持多种语言
 
 ## Whisper 功能特点
 
 ### 优势
 - ✅ **离线处理**：无需网络连接，保护隐私
 - ✅ **多语言支持**：支持中文、英语、日语、韩语等多种语言
-- ✅ **高准确度**：OpenAI训练的先进模型
+- ✅ **高准确度**：Fast训练的先进模型
 - ✅ **多种模型大小**：从39MB到1.5GB，适应不同需求
 - ✅ **开源免费**：无需API密钥或付费
 
@@ -29,7 +29,7 @@ pip install -r requirements.txt
 ```
 
 主要依赖包括：
-- `openai-whisper`：Whisper核心库
+- `Fast-whisper`：Whisper核心库
 - `torch`：PyTorch深度学习框架
 - `torchaudio`：音频处理库
 - `ffmpeg-python`：音频格式转换
@@ -66,7 +66,7 @@ python plugins/mp3_to_txt/manage_models.py download small
 1. 打开 `http://localhost:7000/upload`
 2. 选择音频或视频文件
 3. 选择转换类型（MP3转文字 或 MP4转文字）
-4. 在"转换引擎"下拉菜单中选择"OpenAI Whisper"
+4. 在"转换引擎"下拉菜单中选择"Fast Whisper"
 5. 点击"开始转换"
 
 ### 2. 命令行使用
@@ -198,7 +198,7 @@ POST /api/convert
 ## 更新日志
 
 ### v1.1.0
-- ✅ 添加OpenAI Whisper支持
+- ✅ 添加Fast Whisper支持
 - ✅ 实现引擎选择功能
 - ✅ 创建模型管理工具
 - ✅ 更新Web界面
@@ -210,4 +210,4 @@ POST /api/convert
 
 ## 许可证
 
-本项目遵循MIT许可证。OpenAI Whisper遵循MIT许可证。 
+本项目遵循MIT许可证。Fast Whisper遵循MIT许可证。 

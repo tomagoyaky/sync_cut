@@ -7,7 +7,7 @@ Contains all web page routes for the Flask application
 
 import sys
 from pathlib import Path
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, current_app, jsonify, url_for
 
 # Add the project root to Python path
 project_root = Path(__file__).parent.parent.parent
@@ -113,3 +113,122 @@ def status_page():
     - 包含系统状态和配置信息
     """
     return render_template('status.html', title="系统状态") 
+
+@main_bp.route('/workspace')
+def workspace():
+    """工作区页面"""
+    return render_template('workspace.html')
+
+@main_bp.route('/workspace/files')
+def workspace_files():
+    """获取工作区文件列表"""
+    try:
+        upload_dir = Path(current_app.config.get('UPLOAD_FOLDER', 'workspace/upload'))
+        files = {'videos': [], 'texts': [], 'subtitles': []}
+        
+        if upload_dir.exists():
+            for file_path in upload_dir.iterdir():
+                if file_path.is_file():
+                    file_info = {
+                        'name': file_path.name,
+                        'path': str(file_path),
+                        'size': file_path.stat().st_size,
+                        'modified': file_path.stat().st_mtime
+                    }
+                    
+                    if file_path.suffix.lower() in ['.mp4', '.avi', '.mov', '.mkv']:
+                        files['videos'].append(file_info)
+                    elif file_path.suffix.lower() == '.txt':
+                        files['texts'].append(file_info)
+                    elif file_path.suffix.lower() == '.srt':
+                        files['subtitles'].append(file_info)
+        
+        return jsonify(files)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@main_bp.route('/workspace/file/<filename>')
+def get_workspace_file(filename):
+    """获取工作区文件内容"""
+    try:
+        upload_dir = Path(current_app.config.get('UPLOAD_FOLDER', 'workspace/upload'))
+        file_path = upload_dir / filename
+        
+        if not file_path.exists():
+            return jsonify({'error': '文件不存在'}), 404
+        
+        if file_path.suffix.lower() == '.txt':
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            return jsonify({'type': 'text', 'content': content})
+        elif file_path.suffix.lower() == '.srt':
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            # 解析SRT内容
+            subtitles = parse_srt_content(content)
+            return jsonify({'type': 'srt', 'content': content, 'subtitles': subtitles})
+        elif file_path.suffix.lower() in ['.mp4', '.avi', '.mov', '.mkv']:
+            # 返回视频文件URL
+            video_url = url_for('main.serve_upload_file', filename=filename)
+            return jsonify({'type': 'video', 'url': video_url})
+        else:
+            return jsonify({'error': '不支持的文件类型'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@main_bp.route('/uploads/thumbnails/<path:filename>')
+def serve_thumbnail_file(filename):
+    """提供缩略图文件服务"""
+    try:
+        upload_dir = Path(current_app.config.get('UPLOAD_FOLDER', 'workspace/upload'))
+        thumbnails_dir = upload_dir / 'thumbnails'
+        file_path = thumbnails_dir / filename
+        
+        if file_path.exists() and file_path.is_file():
+            from flask import send_file
+            return send_file(file_path)
+        else:
+            return jsonify({'error': '缩略图文件不存在'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def parse_srt_content(content):
+    """解析SRT字幕内容"""
+    subtitles = []
+    lines = content.strip().split('\n')
+    i = 0
+    
+    while i < len(lines):
+        if lines[i].strip().isdigit():  # 字幕序号
+            subtitle = {'index': int(lines[i].strip())}
+            i += 1
+            
+            if i < len(lines) and '-->' in lines[i]:  # 时间轴
+                time_line = lines[i].strip()
+                start_time, end_time = time_line.split(' --> ')
+                subtitle['start'] = srt_time_to_seconds(start_time)
+                subtitle['end'] = srt_time_to_seconds(end_time)
+                subtitle['start_display'] = start_time
+                subtitle['end_display'] = end_time
+                i += 1
+                
+                # 字幕文本
+                text_lines = []
+                while i < len(lines) and lines[i].strip():
+                    text_lines.append(lines[i].strip())
+                    i += 1
+                subtitle['text'] = '\n'.join(text_lines)
+                subtitles.append(subtitle)
+        i += 1
+    
+    return subtitles
+
+def srt_time_to_seconds(time_str):
+    """将SRT时间格式转换为秒数"""
+    try:
+        time_part, ms_part = time_str.split(',')
+        h, m, s = map(int, time_part.split(':'))
+        ms = int(ms_part)
+        return h * 3600 + m * 60 + s + ms / 1000
+    except:
+        return 0 

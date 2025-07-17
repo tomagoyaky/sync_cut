@@ -11,7 +11,7 @@ import logging
 import uuid
 from pathlib import Path
 from datetime import datetime
-from flask import Blueprint, request, jsonify, send_file
+from flask import Blueprint, request, jsonify, send_file, current_app
 from werkzeug.utils import secure_filename
 
 # Add the project root to Python path
@@ -362,8 +362,6 @@ def api_debug_config():
     返回：
     - 详细的配置信息对象
     """
-    from flask import current_app
-    
     return jsonify({
         'config_from_file': load_config_file(),
         'max_content_length': MAX_CONTENT_LENGTH,
@@ -378,3 +376,88 @@ def api_debug_config():
             'logs': str(LOGS_DIR)
         }
     }) 
+
+@api_bp.route('/workspace/save', methods=['POST'])
+def save_workspace_file():
+    """保存工作区文件"""
+    try:
+        data = request.get_json()
+        filename = data.get('filename')
+        content = data.get('content')
+        file_type = data.get('type')
+        
+        if not filename or content is None:
+            return jsonify({'success': False, 'message': '缺少必要参数'}), 400
+        
+        upload_dir = Path(current_app.config.get('UPLOAD_FOLDER', 'workspace/upload'))
+        file_path = upload_dir / filename
+        
+        # 根据文件类型保存
+        if file_type == 'text' and filename.endswith('.txt'):
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+        elif file_type == 'srt' and filename.endswith('.srt'):
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+        else:
+            return jsonify({'success': False, 'message': '不支持的文件类型'}), 400
+        
+        return jsonify({'success': True, 'message': '文件保存成功'})
+    except Exception as e:
+        logger.error(f"保存工作区文件失败: {str(e)}")
+        return jsonify({'success': False, 'message': f'保存失败: {str(e)}'}), 500
+
+@api_bp.route('/workspace/timeline/generate', methods=['POST'])
+def generate_timeline():
+    """生成视频时间轴缩略图"""
+    try:
+        data = request.get_json()
+        video_filename = data.get('video_filename')
+        interval = data.get('interval', 10)  # 每10秒一个缩略图
+        
+        if not video_filename:
+            return jsonify({'success': False, 'message': '缺少视频文件名'}), 400
+        
+        upload_dir = Path(current_app.config.get('UPLOAD_FOLDER', 'workspace/upload'))
+        video_path = upload_dir / video_filename
+        
+        if not video_path.exists():
+            return jsonify({'success': False, 'message': '视频文件不存在'}), 404
+        
+        # 创建缩略图目录
+        thumbnails_dir = upload_dir / 'thumbnails' / video_filename.replace('.', '_')
+        thumbnails_dir.mkdir(parents=True, exist_ok=True)
+        
+        # 使用FFmpeg生成缩略图
+        from plugins.common.ffmpeg_utils import generate_video_thumbnails
+        
+        thumbnails_subdir = video_filename.replace('.', '_')
+        thumbnails_output_dir = upload_dir / 'thumbnails' / thumbnails_subdir
+        
+        thumbnails = generate_video_thumbnails(
+            str(video_path), 
+            str(thumbnails_output_dir), 
+            interval
+        )
+        
+        video_duration = get_video_duration(str(video_path))
+        
+        return jsonify({
+            'success': True, 
+            'thumbnails': thumbnails,
+            'duration': video_duration
+        })
+    except Exception as e:
+        logger.error(f"生成时间轴失败: {str(e)}")
+        return jsonify({'success': False, 'message': f'生成失败: {str(e)}'}), 500
+
+def get_video_duration(video_path):
+    """获取视频时长 (秒)"""
+    try:
+        # 使用FFmpeg获取视频信息
+        from plugins.common.ffmpeg_utils import get_video_info
+        video_info = get_video_info(video_path)
+        return float(video_info.get('duration', 0))
+    except:
+        # 如果获取失败，返回默认值
+        return 60.0  # 默认60秒 

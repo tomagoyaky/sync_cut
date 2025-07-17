@@ -151,7 +151,7 @@ class FFmpegTools:
             return {}
     
     def extract_audio(self, video_path: Path, output_path: Path, 
-                     audio_config: Dict, progress_callback=None) -> Tuple[bool, str]:
+                     audio_config: Dict, progress_callback=None, video_info: Dict = None) -> Tuple[bool, str]:
         """
         Extract audio from video using FFmpeg
         
@@ -160,6 +160,7 @@ class FFmpegTools:
             output_path: Path to output audio file
             audio_config: Audio configuration parameters
             progress_callback: Optional progress callback function
+            video_info: Pre-fetched video info to avoid duplicate calls
             
         Returns:
             Tuple of (success, message)
@@ -193,7 +194,11 @@ class FFmpegTools:
                 progress_callback(20, "Starting audio extraction...")
             
             # Get video duration for progress calculation
-            video_info = self.get_video_info(video_path)
+            if video_info is None:
+                video_info = self.get_video_info(video_path)
+            
+            # 打印video_info用于调试
+            logger.info(f"Video info: {video_info}")
             total_duration = video_info.get('duration', 0)
             
             # Print the command before execution
@@ -320,7 +325,7 @@ def get_video_info(video_path: str) -> Dict:
     return tools.get_video_info(Path(video_path))
 
 def extract_audio(video_path: str, output_path: str, audio_config: Dict, 
-                 progress_callback=None) -> Tuple[bool, str]:
+                 progress_callback=None, video_info: Dict = None) -> Tuple[bool, str]:
     """
     Convenience function to extract audio from video
     
@@ -329,13 +334,14 @@ def extract_audio(video_path: str, output_path: str, audio_config: Dict,
         output_path: Path to output audio file
         audio_config: Audio configuration parameters
         progress_callback: Optional progress callback function
+        video_info: Pre-fetched video info to avoid duplicate calls
         
     Returns:
         Tuple of (success, message)
     """
     tools = FFmpegTools()
     return tools.extract_audio(
-        Path(video_path), Path(output_path), audio_config, progress_callback
+        Path(video_path), Path(output_path), audio_config, progress_callback, video_info
     )
 
 def validate_video_file(video_path: str) -> Tuple[bool, str]:
@@ -350,3 +356,100 @@ def validate_video_file(video_path: str) -> Tuple[bool, str]:
     """
     tools = FFmpegTools()
     return tools.validate_video_file(Path(video_path)) 
+
+def generate_video_thumbnails(input_path: str, output_dir: str, interval: int = 10) -> List[Dict]:
+    """
+    生成视频缩略图
+    
+    Args:
+        input_path: 输入视频文件路径
+        output_dir: 输出目录
+        interval: 缩略图间隔（秒）
+        
+    Returns:
+        List[Dict]: 缩略图信息列表
+    """
+    import os
+    from pathlib import Path
+    
+    try:
+        # 确保输出目录存在
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
+        
+        # 获取视频信息
+        video_info = get_video_info(input_path)
+        duration = float(video_info.get('duration', 0))
+        
+        thumbnails = []
+        
+        # 生成缩略图
+        for i in range(0, int(duration), interval):
+            thumbnail_filename = f"thumb_{i:04d}.jpg"
+            thumbnail_path = os.path.join(output_dir, thumbnail_filename)
+            
+            # FFmpeg命令生成缩略图
+            cmd = [
+                get_ffmpeg_executable(),
+                '-i', input_path,
+                '-ss', str(i),  # 跳转到指定时间
+                '-vframes', '1',  # 只生成一帧
+                '-vf', 'scale=160:90',  # 缩放到160x90
+                '-y',  # 覆盖输出文件
+                thumbnail_path
+            ]
+            
+            try:
+                result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+                if os.path.exists(thumbnail_path):
+                    thumbnails.append({
+                        'time': i,
+                        'filename': thumbnail_filename,
+                        'path': thumbnail_path,
+                        'url': f'/uploads/thumbnails/{os.path.basename(output_dir)}/{thumbnail_filename}'
+                    })
+                    logger.info(f"生成缩略图成功: {thumbnail_filename} (时间: {i}s)")
+            except subprocess.CalledProcessError as e:
+                logger.error(f"生成缩略图失败 {thumbnail_filename}: {e.stderr}")
+                continue
+        
+        logger.info(f"完成视频缩略图生成，共 {len(thumbnails)} 个缩略图")
+        return thumbnails
+        
+    except Exception as e:
+        logger.error(f"生成视频缩略图失败: {str(e)}")
+        return []
+
+def extract_video_frame(input_path: str, time_seconds: float, output_path: str, width: int = 160, height: int = 90) -> bool:
+    """
+    提取视频指定时间的帧
+    
+    Args:
+        input_path: 输入视频文件路径
+        time_seconds: 时间点（秒）
+        output_path: 输出图片路径
+        width: 图片宽度
+        height: 图片高度
+        
+    Returns:
+        bool: 是否成功
+    """
+    try:
+        cmd = [
+            get_ffmpeg_executable(),
+            '-i', input_path,
+            '-ss', str(time_seconds),
+            '-vframes', '1',
+            '-vf', f'scale={width}:{height}',
+            '-y',
+            output_path
+        ]
+        
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        return os.path.exists(output_path)
+        
+    except subprocess.CalledProcessError as e:
+        logger.error(f"提取视频帧失败: {e.stderr}")
+        return False
+    except Exception as e:
+        logger.error(f"提取视频帧失败: {str(e)}")
+        return False 

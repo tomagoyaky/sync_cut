@@ -1,0 +1,25 @@
+# Basic dependencies for sync_cut project
+requests>=2.31.0
+flask>=2.3.0
+flask-socketio>=5.3.0
+python-dotenv>=1.0.0
+
+# Audio/Video processing
+moviepy>=1.0.3
+pydub>=0.25.1
+audioop-lts>=0.2.1
+
+# Alibaba Cloud SDK and WebSocket
+websocket-client>=1.6.0
+requests>=2.31.0
+
+# Configuration and utilities
+pyyaml>=6.0
+configparser>=5.3.0
+
+# Faster-Whisper dependencies (replaces Fast Whisper)
+faster-whisper>=0.10.0
+torch>=2.0.0
+torchaudio>=2.0.0
+numpy>=1.24.0
+ffmpeg-python>=0.2.0 

@@ -139,6 +139,7 @@ config.yaml
 *.flv
 *.wmv
 *.txt
+!requirements.txt
 *.srt
 
 # Logs

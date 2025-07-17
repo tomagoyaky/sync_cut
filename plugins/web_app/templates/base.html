@@ -89,6 +89,7 @@
             <div class="nav">
                 <a href="/" class="{{ 'active' if request.endpoint == 'index' else '' }}">首页</a>
                 <a href="/upload" class="{{ 'active' if request.endpoint == 'upload_page' else '' }}">文件上传</a>
+                <a href="/workspace" class="{{ 'active' if request.endpoint == 'workspace' else '' }}">📝 工作区</a>
                 <a href="/config" class="{{ 'active' if request.endpoint == 'config_page' else '' }}">配置设置</a>
                 <a href="/history" class="{{ 'active' if request.endpoint == 'history_page' else '' }}">转换历史</a>
                 <a href="/status" class="{{ 'active' if request.endpoint == 'status_page' else '' }}">系统状态</a>

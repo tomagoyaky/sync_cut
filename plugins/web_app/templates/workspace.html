@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工作区 - 视频文案字幕编辑器</title>
+    <style>
+        /* 重置所有样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        /* 工作区主容器 */
+        .workspace-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: #f5f5f5;
+        }
+        
+        /* 工作区头部 */
+        .workspace-header {
+            height: 60px;
+            background: #2c3e50;
+            color: white;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            justify-content: space-between;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+        
+        .workspace-header h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        .header-toolbar {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .file-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .file-selector label {
+            font-size: 14px;
+            color: #ecf0f1;
+        }
+        
+        .file-selector select {
+            padding: 6px 12px;
+            border: 1px solid #34495e;
+            border-radius: 4px;
+            background: white;
+            font-size: 14px;
+            min-width: 200px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+        }
+        
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #219a52;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #7f8c8d;
+            transform: translateY(-1px);
+        }
+        
+        .btn-close {
+            background: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-left: 15px;
+        }
+        
+        .btn-close:hover {
+            background: #c0392b;
+            transform: scale(1.1);
+        }
+        
+        /* 主要内容区域 */
+        .workspace-content {
+            flex: 1;
+            display: flex;
+            height: calc(100vh - 60px);
+            overflow: hidden;
+        }
+        
+        /* 左侧面板 - 文案编辑区 */
+        .left-panel {
+            width: 40%;
+            min-width: 350px;
+            display: flex;
+            flex-direction: column;
+            border-right: 3px solid #bdc3c7;
+            background: white;
+        }
+        
+        .panel-header {
+            height: 50px;
+            background: linear-gradient(135deg, #ecf0f1, #d5dbdb);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            border-bottom: 2px solid #bdc3c7;
+            font-weight: bold;
+            font-size: 16px;
+            color: #2c3e50;
+        }
+        
+        .text-editor-container {
+            flex: 1;
+            padding: 20px;
+            background: white;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .text-editor {
+            flex: 1;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            background: #fafafa;
+            transition: border-color 0.2s ease;
+        }
+        
+        .text-editor:focus {
+            border-color: #3498db;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+        
+        /* 右侧面板 */
+        .right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #f8f9fa;
+        }
+        
+        /* 视频预览区 */
+        .video-preview-section {
+            height: 50%;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border-bottom: 3px solid #bdc3c7;
+        }
+        
+        .video-preview-section video {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .video-placeholder {
+            color: #7f8c8d;
+            font-size: 20px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .video-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.85);
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 14px;
+        }
+        
+        .video-controls button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 4px;
+            transition: background 0.2s ease;
+        }
+        
+        .video-controls button:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        /* 时间轴区域 */
+        .timeline-section {
+            height: 50%;
+            background: white;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .timeline-header {
+            height: 50px;
+            background: linear-gradient(135deg, #ecf0f1, #d5dbdb);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            justify-content: space-between;
+            border-bottom: 2px solid #bdc3c7;
+            font-weight: bold;
+            font-size: 16px;
+            color: #2c3e50;
+        }
+        
+        .timeline-toolbar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .timeline-content {
+            flex: 1;
+            background: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        /* 时间轴刻度尺 */
+        .timeline-ruler {
+            height: 40px;
+            background: white;
+            border-bottom: 2px solid #ddd;
+            position: relative;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+        
+        .ruler-content {
+            position: relative;
+            height: 100%;
+            min-width: 100%;
+        }
+        
+        .ruler-mark {
+            position: absolute;
+            height: 100%;
+            border-left: 1px solid #ccc;
+            font-size: 11px;
+            color: #666;
+            padding-left: 4px;
+            padding-top: 4px;
+        }
+        
+        .ruler-mark.major {
+            border-left: 2px solid #2c3e50;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        /* 播放指针 */
+        .playhead {
+            position: absolute;
+            top: 0;
+            width: 3px;
+            height: 100%;
+            background: #e74c3c;
+            z-index: 999;
+            pointer-events: none;
+            box-shadow: 0 0 4px rgba(231, 76, 60, 0.5);
+        }
+        
+        /* 轨道区域 */
+        .timeline-tracks {
+            flex: 1;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+        
+        .timeline-track {
+            height: 80px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            background: white;
+        }
+        
+        .track-label {
+            width: 130px;
+            background: linear-gradient(135deg, #ecf0f1, #d5dbdb);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border-right: 2px solid #bdc3c7;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+        
+        .track-content {
+            flex: 1;
+            position: relative;
+            background: #f8f9fa;
+            min-width: 800px;
+        }
+        
+        /* 时间轴项目 */
+        .timeline-item {
+            position: absolute;
+            height: 75%;
+            top: 12.5%;
+            border-radius: 6px;
+            cursor: move;
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+            padding: 0 10px;
+            user-select: none;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+        
+        .timeline-item.subtitle {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            border-color: #27ae60;
+        }
+        
+        .timeline-item.thumbnail {
+            background: linear-gradient(135deg, #7f8c8d, #95a5a6);
+            border-color: #7f8c8d;
+            padding: 4px;
+        }
+        
+        .timeline-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        
+        .timeline-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+        
+        .timeline-item.dragging {
+            z-index: 1000;
+            opacity: 0.8;
+            transform: scale(1.05) translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+        }
+        
+        /* 加载状态 */
+        .loading {
+            display: none;
+            color: #7f8c8d;
+            font-style: italic;
+            margin-left: 10px;
+            font-size: 14px;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 1200px) {
+            .left-panel {
+                width: 35%;
+            }
+        }
+        
+        @media (max-width: 900px) {
+            .workspace-content {
+                flex-direction: column;
+            }
+            
+            .left-panel {
+                width: 100%;
+                height: 40%;
+                border-right: none;
+                border-bottom: 3px solid #bdc3c7;
+            }
+            
+            .right-panel {
+                height: 60%;
+            }
+            
+            .video-preview-section {
+                height: 60%;
+            }
+            
+            .timeline-section {
+                height: 40%;
+            }
+            
+            .header-toolbar {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            
+            .track-label {
+                width: 90px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="workspace-container">
+        <!-- 工作区头部 -->
+        <div class="workspace-header">
+            <h1>📝 视频文案字幕编辑器</h1>
+            <div class="header-toolbar">
+                <div class="file-selector">
+                    <label>视频文件:</label>
+                    <select id="videoSelect">
+                        <option value="">选择视频文件...</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="loadWorkspace()">
+                    🔄 加载工作区
+                </button>
+                <button class="btn btn-success" onclick="saveWorkspace()">
+                    💾 保存修改
+                </button>
+                <button class="btn btn-secondary" onclick="exportProject()">
+                    📤 导出项目
+                </button>
+                <button class="btn btn-close" onclick="closeWorkspace()" title="关闭工作区">
+                    ×
+                </button>
+            </div>
+        </div>
+        
+        <!-- 工作区主内容 -->
+        <div class="workspace-content">
+            <!-- 左侧文案编辑区 -->
+            <div class="left-panel">
+                <div class="panel-header">
+                    📄 文案编辑
+                    <div class="loading" id="textLoading">正在加载...</div>
+                </div>
+                <div class="text-editor-container">
+                    <textarea 
+                        class="text-editor"
+                        id="textEditor" 
+                        placeholder="在这里编辑视频文案内容...&#10;&#10;• 支持实时编辑和保存&#10;• 文案内容将与时间轴同步显示&#10;• 可以随时保存修改">
+                    </textarea>
+                </div>
+            </div>
+            
+            <!-- 右侧视频预览和时间轴 -->
+            <div class="right-panel">
+                <!-- 视频预览区 -->
+                <div class="video-preview-section">
+                    <video id="videoPlayer" controls style="display: none;">
+                        您的浏览器不支持视频播放。
+                    </video>
+                    <div class="video-placeholder" id="videoPlaceholder">
+                        <div>🎬</div>
+                        <div>请选择视频文件进行预览</div>
+                    </div>
+                    <div class="video-controls" id="videoControls" style="display: none;">
+                        <button onclick="togglePlay()">⏯️</button>
+                        <span id="currentTime">00:00</span>
+                        <span>/</span>
+                        <span id="totalTime">00:00</span>
+                    </div>
+                </div>
+                
+                <!-- 时间轴区域 -->
+                <div class="timeline-section">
+                    <div class="timeline-header">
+                        ⏱️ 时间轴编辑器
+                        <div class="timeline-toolbar">
+                            <button class="btn btn-primary" onclick="generateThumbnails()" id="generateBtn">
+                                🖼️ 生成缩略图
+                            </button>
+                            <button class="btn btn-secondary" onclick="zoomTimeline(0.5)">🔍-</button>
+                            <button class="btn btn-secondary" onclick="zoomTimeline(2)">🔍+</button>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-content">
+                        <!-- 时间轴刻度尺 -->
+                        <div class="timeline-ruler">
+                            <div class="ruler-content" id="rulerContent">
+                                <div class="playhead" id="playhead" style="left: 0px;"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- 轨道区域 -->
+                        <div class="timeline-tracks" id="timelineTracks">
+                            <!-- 视频缩略图轨道 -->
+                            <div class="timeline-track">
+                                <div class="track-label">🎬 视频缩略图</div>
+                                <div class="track-content" id="videoTrack">
+                                    <!-- 视频缩略图将在这里显示 -->
+                                </div>
+                            </div>
+                            
+                            <!-- 字幕轨道 -->
+                            <div class="timeline-track">
+                                <div class="track-label">💬 字幕轨道</div>
+                                <div class="track-content" id="subtitleTrack">
+                                    <!-- 字幕块将在这里显示 -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentProject = {
+            video: null,
+            text: '',
+            subtitles: [],
+            duration: 0
+        };
+
+        let timelineScale = 15; // 像素/秒
+        let isDragging = false;
+        let dragElement = null;
+        let dragStartX = 0;
+        let dragStartTime = 0;
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFileList();
+            initializeTimeline();
+            setupVideoPlayer();
+        });
+
+        // 关闭工作区
+        function closeWorkspace() {
+            if (confirm('确定要关闭工作区吗？未保存的修改将会丢失。')) {
+                window.location.href = '/';
+            }
+        }
+
+        // 加载文件列表
+        async function loadFileList() {
+            try {
+                const response = await fetch('/workspace/files');
+                const files = await response.json();
+                
+                const videoSelect = document.getElementById('videoSelect');
+                videoSelect.innerHTML = '<option value="">选择视频文件...</option>';
+                
+                files.videos.forEach(video => {
+                    const option = document.createElement('option');
+                    option.value = video.name;
+                    option.textContent = video.name;
+                    videoSelect.appendChild(option);
+                });
+                
+                // 自动选择第一个视频文件
+                if (files.videos.length > 0) {
+                    videoSelect.value = files.videos[0].name;
+                }
+            } catch (error) {
+                console.error('加载文件列表失败:', error);
+                alert('加载文件列表失败: ' + error.message);
+            }
+        }
+
+        // 加载工作区
+        async function loadWorkspace() {
+            const videoFilename = document.getElementById('videoSelect').value;
+            if (!videoFilename) {
+                alert('请先选择视频文件');
+                return;
+            }
+            
+            document.getElementById('textLoading').style.display = 'block';
+            
+            try {
+                // 加载视频
+                await loadVideo(videoFilename);
+                
+                // 加载对应的文本文件
+                const textFilename = videoFilename.replace(/\.[^.]+$/, '.txt');
+                await loadTextFile(textFilename);
+                
+                // 加载对应的字幕文件
+                const srtFilename = videoFilename.replace(/\.[^.]+$/, '.srt');
+                await loadSubtitleFile(srtFilename);
+                
+                // 更新时间轴
+                updateTimeline();
+                
+                alert('工作区加载成功！');
+                
+            } catch (error) {
+                console.error('加载工作区失败:', error);
+                alert('加载工作区失败: ' + error.message);
+            } finally {
+                document.getElementById('textLoading').style.display = 'none';
+            }
+        }
+
+        // 加载视频
+        async function loadVideo(filename) {
+            try {
+                const response = await fetch(`/workspace/file/${filename}`);
+                const data = await response.json();
+                
+                if (data.type === 'video') {
+                    const video = document.getElementById('videoPlayer');
+                    video.src = data.url;
+                    video.style.display = 'block';
+                    document.getElementById('videoPlaceholder').style.display = 'none';
+                    document.getElementById('videoControls').style.display = 'flex';
+                    
+                    currentProject.video = {
+                        filename: filename,
+                        url: data.url
+                    };
+                    
+                    // 等待视频元数据加载
+                    video.addEventListener('loadedmetadata', function() {
+                        currentProject.duration = video.duration;
+                        updateTimelineRuler();
+                    });
+                }
+            } catch (error) {
+                throw new Error('加载视频失败: ' + error.message);
+            }
+        }
+
+        // 加载文本文件
+        async function loadTextFile(filename) {
+            try {
+                const response = await fetch(`/workspace/file/${filename}`);
+                const data = await response.json();
+                
+                if (data.type === 'text') {
+                    currentProject.text = data.content;
+                    document.getElementById('textEditor').value = data.content;
+                }
+            } catch (error) {
+                console.warn('文本文件不存在:', filename);
+                currentProject.text = '';
+                document.getElementById('textEditor').value = '';
+            }
+        }
+
+        // 加载字幕文件
+        async function loadSubtitleFile(filename) {
+            try {
+                const response = await fetch(`/workspace/file/${filename}`);
+                const data = await response.json();
+                
+                if (data.type === 'srt') {
+                    currentProject.subtitles = data.subtitles;
+                    updateSubtitleTrack();
+                }
+            } catch (error) {
+                console.warn('字幕文件不存在:', filename);
+                currentProject.subtitles = [];
+            }
+        }
+
+        // 保存工作区
+        async function saveWorkspace() {
+            if (!currentProject.video) {
+                alert('请先加载工作区');
+                return;
+            }
+            
+            try {
+                const videoFilename = currentProject.video.filename;
+                const textFilename = videoFilename.replace(/\.[^.]+$/, '.txt');
+                
+                // 保存文本文件
+                const textContent = document.getElementById('textEditor').value;
+                const textResponse = await fetch('/api/workspace/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        filename: textFilename,
+                        content: textContent,
+                        type: 'text'
+                    })
+                });
+                
+                if (!textResponse.ok) {
+                    throw new Error('保存文本文件失败');
+                }
+                
+                // 如果有字幕修改，也保存字幕文件
+                if (currentProject.subtitles.length > 0) {
+                    const srtContent = generateSRTContent(currentProject.subtitles);
+                    const srtFilename = videoFilename.replace(/\.[^.]+$/, '.srt');
+                    
+                    const srtResponse = await fetch('/api/workspace/save', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            filename: srtFilename,
+                            content: srtContent,
+                            type: 'srt'
+                        })
+                    });
+                    
+                    if (!srtResponse.ok) {
+                        throw new Error('保存字幕文件失败');
+                    }
+                }
+                
+                alert('保存成功！');
+            } catch (error) {
+                console.error('保存失败:', error);
+                alert('保存失败: ' + error.message);
+            }
+        }
+
+        // 生成SRT内容
+        function generateSRTContent(subtitles) {
+            return subtitles.map((sub, index) => {
+                return `${index + 1}\n${sub.start_display} --> ${sub.end_display}\n${sub.text}\n`;
+            }).join('\n');
+        }
+
+        // 生成缩略图
+        async function generateThumbnails() {
+            if (!currentProject.video) {
+                alert('请先加载视频');
+                return;
+            }
+            
+            const generateBtn = document.getElementById('generateBtn');
+            generateBtn.disabled = true;
+            generateBtn.textContent = '🔄 生成中...';
+            
+            try {
+                const response = await fetch('/api/workspace/timeline/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        video_filename: currentProject.video.filename,
+                        interval: 10
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    updateVideoTrack(data.thumbnails);
+                    alert('缩略图生成成功！');
+                } else {
+                    alert('生成缩略图失败: ' + data.message);
+                }
+            } catch (error) {
+                console.error('生成缩略图失败:', error);
+                alert('生成缩略图失败: ' + error.message);
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.textContent = '🖼️ 生成缩略图';
+            }
+        }
+
+        // 初始化时间轴
+        function initializeTimeline() {
+            const timelineContent = document.querySelector('.timeline-content');
+            
+            // 添加鼠标事件处理
+            timelineContent.addEventListener('mousedown', handleTimelineMouseDown);
+            document.addEventListener('mousemove', handleTimelineMouseMove);
+            document.addEventListener('mouseup', handleTimelineMouseUp);
+            
+            // 时间轴点击跳转
+            const timelineRuler = document.querySelector('.timeline-ruler');
+            timelineRuler.addEventListener('click', function(e) {
+                const rect = this.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const time = x / timelineScale;
+                
+                const video = document.getElementById('videoPlayer');
+                if (video && currentProject.duration && time <= video.duration) {
+                    video.currentTime = time;
+                }
+            });
+        }
+
+        // 设置视频播放器
+        function setupVideoPlayer() {
+            const video = document.getElementById('videoPlayer');
+            
+            video.addEventListener('timeupdate', function() {
+                updatePlayhead();
+                updateCurrentTime();
+            });
+            
+            video.addEventListener('loadedmetadata', function() {
+                document.getElementById('totalTime').textContent = formatTime(video.duration);
+            });
+        }
+
+        // 更新时间轴刻度尺
+        function updateTimelineRuler() {
+            const rulerContent = document.getElementById('rulerContent');
+            const duration = currentProject.duration || 60;
+            
+            rulerContent.innerHTML = '<div class="playhead" id="playhead" style="left: 0px;"></div>';
+            rulerContent.style.width = (duration * timelineScale) + 'px';
+            
+            // 添加时间刻度
+            for (let i = 0; i <= duration; i += 10) {
+                const mark = document.createElement('div');
+                mark.className = 'ruler-mark major';
+                mark.style.left = (i * timelineScale) + 'px';
+                mark.textContent = formatTime(i);
+                rulerContent.appendChild(mark);
+                
+                // 添加5秒小刻度
+                if (i + 5 <= duration) {
+                    const smallMark = document.createElement('div');
+                    smallMark.className = 'ruler-mark';
+                    smallMark.style.left = ((i + 5) * timelineScale) + 'px';
+                    rulerContent.appendChild(smallMark);
+                }
+            }
+            
+            // 更新轨道宽度
+            document.querySelectorAll('.track-content').forEach(track => {
+                track.style.minWidth = (duration * timelineScale) + 'px';
+            });
+        }
+
+        // 更新视频轨道
+        function updateVideoTrack(thumbnails) {
+            const videoTrack = document.getElementById('videoTrack');
+            videoTrack.innerHTML = '';
+            
+            thumbnails.forEach(thumb => {
+                const item = document.createElement('div');
+                item.className = 'timeline-item thumbnail';
+                item.style.left = (thumb.time * timelineScale) + 'px';
+                item.style.width = (10 * timelineScale) + 'px'; // 10秒宽度
+                item.dataset.time = thumb.time;
+                item.innerHTML = `<img src="${thumb.url}" alt="缩略图 ${thumb.time}s" onerror="this.style.display='none'">`;
+                
+                // 添加拖拽功能
+                item.draggable = true;
+                item.addEventListener('dragstart', handleDragStart);
+                
+                videoTrack.appendChild(item);
+            });
+        }
+
+        // 更新字幕轨道
+        function updateSubtitleTrack() {
+            const subtitleTrack = document.getElementById('subtitleTrack');
+            subtitleTrack.innerHTML = '';
+            
+            currentProject.subtitles.forEach((subtitle, index) => {
+                const item = document.createElement('div');
+                item.className = 'timeline-item subtitle';
+                item.style.left = (subtitle.start * timelineScale) + 'px';
+                item.style.width = ((subtitle.end - subtitle.start) * timelineScale) + 'px';
+                item.dataset.index = index;
+                item.dataset.start = subtitle.start;
+                item.dataset.end = subtitle.end;
+                item.textContent = subtitle.text.substring(0, 20) + (subtitle.text.length > 20 ? '...' : '');
+                item.title = subtitle.text;
+                
+                // 添加拖拽功能
+                item.draggable = true;
+                item.addEventListener('dragstart', handleDragStart);
+                
+                subtitleTrack.appendChild(item);
+            });
+        }
+
+        // 更新时间轴
+        function updateTimeline() {
+            updateTimelineRuler();
+            updateSubtitleTrack();
+        }
+
+        // 更新播放指针
+        function updatePlayhead() {
+            const video = document.getElementById('videoPlayer');
+            const playhead = document.getElementById('playhead');
+            
+            if (video && playhead && currentProject.duration) {
+                const position = (video.currentTime / currentProject.duration) * (currentProject.duration * timelineScale);
+                playhead.style.left = position + 'px';
+            }
+        }
+
+        // 更新当前时间显示
+        function updateCurrentTime() {
+            const video = document.getElementById('videoPlayer');
+            const currentTimeSpan = document.getElementById('currentTime');
+            
+            if (video && currentTimeSpan) {
+                currentTimeSpan.textContent = formatTime(video.currentTime);
+            }
+        }
+
+        // 格式化时间
+        function formatTime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
+            
+            if (hours > 0) {
+                return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            } else {
+                return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }
+        }
+
+        // 时间轴缩放
+        function zoomTimeline(factor) {
+            timelineScale *= factor;
+            updateTimeline();
+            // 如果有缩略图，重新调整位置
+            const videoTrack = document.getElementById('videoTrack');
+            if (videoTrack.children.length > 0) {
+                Array.from(videoTrack.children).forEach(item => {
+                    const time = parseFloat(item.dataset.time);
+                    item.style.left = (time * timelineScale) + 'px';
+                    item.style.width = (10 * timelineScale) + 'px';
+                });
+            }
+        }
+
+        // 播放/暂停控制
+        function togglePlay() {
+            const video = document.getElementById('videoPlayer');
+            if (video.paused) {
+                video.play();
+            } else {
+                video.pause();
+            }
+        }
+
+        // 拖拽处理
+        function handleDragStart(e) {
+            dragElement = e.target;
+            dragStartX = e.clientX;
+            dragStartTime = parseFloat(dragElement.dataset.start || dragElement.dataset.time || 0);
+            dragElement.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleTimelineMouseDown(e) {
+            if (e.target.classList.contains('timeline-item')) {
+                isDragging = true;
+                handleDragStart(e);
+            }
+        }
+
+        function handleTimelineMouseMove(e) {
+            if (isDragging && dragElement) {
+                const deltaX = e.clientX - dragStartX;
+                const deltaTime = deltaX / timelineScale;
+                const newTime = Math.max(0, dragStartTime + deltaTime);
+                
+                dragElement.style.left = (newTime * timelineScale) + 'px';
+            }
+        }
+
+        function handleTimelineMouseUp(e) {
+            if (isDragging && dragElement) {
+                isDragging = false;
+                
+                // 更新数据
+                const newTime = parseFloat(dragElement.style.left) / timelineScale;
+                if (dragElement.classList.contains('subtitle')) {
+                    const index = parseInt(dragElement.dataset.index);
+                    const duration = currentProject.subtitles[index].end - currentProject.subtitles[index].start;
+                    currentProject.subtitles[index].start = newTime;
+                    currentProject.subtitles[index].end = newTime + duration;
+                    dragElement.dataset.start = newTime;
+                    dragElement.dataset.end = newTime + duration;
+                }
+                
+                dragElement.classList.remove('dragging');
+                dragElement = null;
+            }
+        }
+
+        // 导出项目
+        function exportProject() {
+            if (!currentProject.video) {
+                alert('请先加载工作区');
+                return;
+            }
+            
+            const projectData = {
+                video: currentProject.video,
+                text: document.getElementById('textEditor').value,
+                subtitles: currentProject.subtitles,
+                duration: currentProject.duration,
+                exported_at: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(projectData, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${currentProject.video.filename.replace(/\.[^.]+$/, '')}_project.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert('项目文件导出成功！');
+        }
+    </script>
+</body>
+</html> 

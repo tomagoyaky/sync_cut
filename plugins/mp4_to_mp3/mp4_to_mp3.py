@@ -54,18 +54,22 @@ class MP4ToMP3Converter:
             start_time = datetime.now()
             
             if progress_callback:
-                progress_callback(0, "Validating video file...")
+                progress_callback(0, "Getting video information...")
             
-            # Validate video file using FFmpeg tools
-            is_valid, validation_msg = self.ffmpeg_tools.validate_video_file(input_path)
-            if not is_valid:
-                return False, f"Video validation failed: {validation_msg}", {}
+            # Get video info first (只调用一次)
+            video_info = self.ffmpeg_tools.get_video_info(input_path)
+            if not video_info:
+                return False, "Unable to read video file information", {}
             
             if progress_callback:
-                progress_callback(10, "Getting video information...")
+                progress_callback(10, "Validating video file...")
             
-            # Get video info using FFmpeg
-            video_info = self.ffmpeg_tools.get_video_info(input_path)
+            # 基于已获取的视频信息进行验证，而不是重新调用
+            if video_info.get('duration', 0) <= 0:
+                return False, "Video has no duration", {}
+            
+            if not video_info.get('has_audio', False):
+                return False, "Video has no audio track", {}
             
             # Create temporary audio file
             temp_audio_path = self.tmp_dir / f"temp_{input_path.stem}.mp3"
@@ -73,10 +77,11 @@ class MP4ToMP3Converter:
             if progress_callback:
                 progress_callback(20, "Extracting audio with FFmpeg...")
             
-            # Extract audio using FFmpeg tools
+            # Extract audio using FFmpeg tools (传递已获取的视频信息)
             success, extract_msg = self.ffmpeg_tools.extract_audio(
                 input_path, temp_audio_path, self.config,
-                lambda p, m: progress_callback(20 + p//3, m) if progress_callback else None
+                lambda p, m: progress_callback(20 + p//3, m) if progress_callback else None,
+                video_info  # 传递预先获取的视频信息，避免重复调用
             )
             
             if not success:

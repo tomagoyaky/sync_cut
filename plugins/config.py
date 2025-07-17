@@ -19,9 +19,13 @@ def load_config_file(config_path: Path = None):
         config_path = PROJECT_ROOT / 'config.yaml'
     
     if config_path.exists():
-        with open(config_path, 'r', encoding='utf-8') as f:
-            config = yaml.safe_load(f)
-        return config
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = yaml.safe_load(f)
+            return config if config is not None else {}
+        except Exception as e:
+            print(f"Error loading config file {config_path}: {e}")
+            return {}
     return {}
 
 def save_config_file(config: dict, config_path: Path = None):
@@ -30,10 +34,12 @@ def save_config_file(config: dict, config_path: Path = None):
         config_path = PROJECT_ROOT / 'config.yaml'
     
     with open(config_path, 'w', encoding='utf-8') as f:
-        yaml.dump(config, f, default_flow_style=False, ensure_ascii=False)
+        yaml.dump(config, f, default_flow_style=False, allow_unicode=True)
 
 # Load configuration
 _config = load_config_file()
+if _config is None:
+    _config = {}
 
 # Application settings - from config.yaml or environment variables
 APP_NAME = _config.get('app', {}).get('name', os.getenv('APP_NAME', 'Sync Cut'))

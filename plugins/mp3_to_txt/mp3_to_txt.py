@@ -511,8 +511,8 @@ class MP3ToTXTConverter:
             text = result.get('text', '').strip()
             if text:
                 # Use actual timestamps from NLS if available
-                begin_time = result.get('begin_time', (i-1) * 5000)  # milliseconds
-                end_time = result.get('end_time', i * 5000)  # milliseconds
+                begin_time = result.get('begin_time', (i-1) * 7000)  # milliseconds
+                end_time = result.get('end_time', i * 7000)  # milliseconds
                 
                 # Convert to timedelta
                 start_td = timedelta(milliseconds=begin_time)

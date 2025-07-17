@@ -151,48 +151,61 @@ document.getElementById('configForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
     const formData = new FormData(this);
-    const config = {};
     
-    // Build config object
-    config.mp4_to_mp3 = {
-        audio_bitrate: formData.get('mp4_audio_bitrate'),
-        audio_channels: parseInt(formData.get('mp4_audio_channels')),
-        audio_sample_rate: parseInt(formData.get('mp4_sample_rate')),
-        normalize_audio: formData.get('mp4_normalize') === 'on',
-        remove_silence: true,
-        audio_codec: 'mp3'
-    };
-    
-    config.mp3_to_txt = {
-        sample_rate: parseInt(formData.get('txt_sample_rate')),
-        format: 'pcm',
-        enable_punctuation_prediction: formData.get('txt_punctuation') === 'on',
-        enable_inverse_text_normalization: formData.get('txt_normalization') === 'on',
-        enable_voice_detection: formData.get('txt_voice_detection') === 'on',
-        max_sentence_silence: 800,
-        chunk_size: 8192,
-        // Whisper settings
-        whisper_model_size: formData.get('whisper_model_size'),
-        whisper_language: formData.get('whisper_language'),
-        whisper_device: formData.get('whisper_device'),
-        whisper_verbose: formData.get('whisper_verbose') === 'on'
-    };
-    
-    config.alibaba_nls = {
-        app_key: formData.get('nls_app_key'),
-        access_key_id: formData.get('nls_access_key_id'),
-        access_key_secret: formData.get('nls_access_key_secret'),
-        region: 'cn-shanghai',
-        endpoint: 'wss://nls-gateway.cn-shanghai.aliyuncs.com/ws/v1'
-    };
-    
-    fetch('/api/config', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(config)
-    })
+    // 首先获取当前完整配置
+    fetch('/api/config')
+        .then(response => response.json())
+        .then(currentConfig => {
+            // 确保配置对象存在
+            if (!currentConfig.mp4_to_mp3) currentConfig.mp4_to_mp3 = {};
+            if (!currentConfig.mp3_to_txt) currentConfig.mp3_to_txt = {};
+            if (!currentConfig.alibaba_nls) currentConfig.alibaba_nls = {};
+            
+            // 只更新修改的部分
+            currentConfig.mp4_to_mp3 = {
+                ...currentConfig.mp4_to_mp3,
+                audio_bitrate: formData.get('mp4_audio_bitrate'),
+                audio_channels: parseInt(formData.get('mp4_audio_channels')),
+                audio_sample_rate: parseInt(formData.get('mp4_sample_rate')),
+                normalize_audio: formData.get('mp4_normalize') === 'on',
+                remove_silence: true,
+                audio_codec: 'mp3'
+            };
+            
+            currentConfig.mp3_to_txt = {
+                ...currentConfig.mp3_to_txt,
+                sample_rate: parseInt(formData.get('txt_sample_rate')),
+                format: 'pcm',
+                enable_punctuation_prediction: formData.get('txt_punctuation') === 'on',
+                enable_inverse_text_normalization: formData.get('txt_normalization') === 'on',
+                enable_voice_detection: formData.get('txt_voice_detection') === 'on',
+                max_sentence_silence: 800,
+                chunk_size: 8192,
+                // Whisper settings
+                whisper_model_size: formData.get('whisper_model_size'),
+                whisper_language: formData.get('whisper_language'),
+                whisper_device: formData.get('whisper_device'),
+                whisper_verbose: formData.get('whisper_verbose') === 'on'
+            };
+            
+            currentConfig.alibaba_nls = {
+                ...currentConfig.alibaba_nls,
+                app_key: formData.get('nls_app_key'),
+                access_key_id: formData.get('nls_access_key_id'),
+                access_key_secret: formData.get('nls_access_key_secret'),
+                region: 'cn-shanghai',
+                endpoint: 'wss://nls-gateway.cn-shanghai.aliyuncs.com/ws/v1'
+            };
+            
+            // 保存完整配置
+            return fetch('/api/config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(currentConfig)
+            });
+        })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
